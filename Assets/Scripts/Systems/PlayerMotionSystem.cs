@@ -16,7 +16,7 @@ public class MotionSystem : JobComponentSystem
 
         Entities.ForEach((ref Translation translation, ref Rotation rotation, ref PhysicsVelocity vel, in PlayerMovement moveData) =>
         {
-            if (Input.GetKey("w")) {
+            if (Input.GetKey(KeyCode.M)) {
                 Vector3 newDir = math.mul(rotation.Value, new Vector3(0, 3, 0));
                 vel.Linear.xyz = newDir;
             }

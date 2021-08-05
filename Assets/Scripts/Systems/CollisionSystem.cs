@@ -43,7 +43,7 @@ public class CollisionSystem : JobComponentSystem
             bool bIsPlayer = playerColiderGroup.HasComponent(entityB);
 
 
-            if (aIsRock && bIsLaser)
+            if ((aIsRock && bIsLaser) || (aIsLaser && bIsRock))
             {
                 Destroy destroyRData = destroyGroup[entityA];
                 Destroy destroyLData = destroyGroup[entityB];

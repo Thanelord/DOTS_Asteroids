@@ -5,12 +5,30 @@ using UnityEngine;
 
 public class SpawnSystem : ComponentSystem
 {
+    
     private Unity.Mathematics.Random random;
     private int counter = 10;
+
+    private EntityQuery spawnerQuery;
+    private PrefabHolder prefabH;
 
     protected override void OnCreate()
     {
         random = new Unity.Mathematics.Random(10);
+    }
+
+    protected override void OnStartRunning()
+    {
+        spawnerQuery = GetEntityQuery(ComponentType.ReadOnly<PrefabHolder>());
+        prefabH = spawnerQuery.GetSingleton<PrefabHolder>();
+
+        while (prefabH.rocksSpawned > 0)
+        {
+            prefabH.rocksSpawned -= 1;
+            Entity spawnRock = EntityManager.Instantiate(prefabH.prefabRock);
+            EntityManager.SetComponentData(spawnRock, new GoForward { dir = new float3(random.NextFloat(-5, 5), random.NextFloat(-5, 5), 0) });
+            EntityManager.SetComponentData(spawnRock, new Translation { Value = new float3(random.NextFloat(-5, 5), random.NextFloat(-5, 5), 0) });
+        }
     }
 
     protected override void OnUpdate()
@@ -19,14 +37,6 @@ public class SpawnSystem : ComponentSystem
 
         Entities.ForEach((ref PrefabHolder prefab) =>
         {
-            if (prefab.rocksSpawned > 0)
-            {
-                prefab.rocksSpawned -= 1;
-                Entity spawnRock = EntityManager.Instantiate(prefab.prefabRock);
-                EntityManager.SetComponentData(spawnRock, new GoForward { dir = new float3(random.NextFloat(-5, 5), random.NextFloat(-5, 5), 0) });
-                EntityManager.SetComponentData(spawnRock, new Translation { Value = new float3(random.NextFloat(-5,5), random.NextFloat(-5, 5), 0) });
-            }
-            
             if (Input.GetKey("space"))
             {
                 if (counter >= 10)
@@ -43,8 +53,26 @@ public class SpawnSystem : ComponentSystem
 
                     counter = 0;
                 }
-            }
-            
+            }  
         });
-    } 
+
+        Entities.
+            WithAll<Destroy>().
+            WithAll<SplitTag>().
+            ForEach((ref Destroy destroy, ref Translation transl) =>
+        {
+            if (destroy.dead && !destroy.split)
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    Entity spawnShard = EntityManager.Instantiate(prefabH.prefabRockM);
+                    EntityManager.SetComponentData(spawnShard, new GoForward { dir = new float3(random.NextFloat(-5, 5), random.NextFloat(-5, 5), 0) });
+                    EntityManager.SetComponentData(spawnShard, new Translation { Value = new float3(transl.Value.x, transl.Value.y, 0) });
+                }
+                //Rok has split and can be destroyed
+                destroy.split = true;
+            }
+        });
+    }
+    
 }
